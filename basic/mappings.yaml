@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+ 
+Parameters:
+  InstanceType:
+    Description: "instance type"
+    Type: String
+    Default: "t2.micro"
+    AllowedValues: 
+      - "t2.micro"
+      - "t2.small"
+      - "t2.medium"
+ 
+Mappings:
+  RegionMap:
+    us-east-1:
+      t2.micro: "ami-0abcdef1234567890"
+      t2.small: "ami-0abcdef1234567891"
+    us-west-2:
+      t2.micro: "ami-0fedcba9876543210"
+      t2.small: "ami-0fedcba9876543211"
+ 
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: 
+        Fn::FindInMap:
+          - RegionMap                # Mapping Name
+          - !Ref "AWS::Region"        # First Level Key (Region)
+          - !Ref InstanceType         # Second Level Key (Instance Type)
+      Tags:
+        - Key: Name
+          Value: MyInstance
+ 
+Outputs:
+  InstanceID:
+    Description: "The ID of the created EC2 instance"
+    Value: !Ref MyEC2Instance
