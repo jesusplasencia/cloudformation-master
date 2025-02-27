@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+  EnvironmentType:
+    Default: dev
+    Type: String
+    AllowedValues:
+      - dev
+      - prod
+    Description: Choose the deployment environment (dev or prod)
+
+Conditions:
+  CreateProdResources: !Equals [!Ref EnvironmentType, prod]
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref ImageId
+      Tags:
+        - Key: Name
+          Value: "Application Layer"
+
+  MyEBSVolume:
+    Type: AWS::EC2::Volume
+    Condition: CreateProdResources
+    Properties:
+      Size: 10
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: MyEBSVolume
+  
+  MyVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Condition: CreateProdResources
+    Properties:
+      InstanceId: !Ref MyEC2Instance
+      VolumeId: !Ref MyEBSVolume
+      Device: /dev/sdh  # Mount point inside the EC2 instance
+
+Outputs:
+  EC2InstanceId:
+    Description: ID of the EC2 instance
+    Value: !Ref MyEC2Instance
+
+  EBSVolumeId:
+    Condition: CreateProdResources
+    Description: ID of the EBS Volume (only in prod)
+    Value: !Ref MyEBSVolume

@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Ensure selected subnets belong to the selected VPC using Rules."
+
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: "Select the VPC in which resources will be deployed."
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "Select the subnets for the application."
+
+Rules:
+  SubnetsMustBelongToVpc:
+    Assertions:
+      - Assert: !EachMemberIn [!Ref SubnetIds, !RefAll AWS::EC2::Subnet::VpcId]
+        AssertDescription: "All selected subnets must belong to the selected VPC."
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: !Ref ImageId
+      SubnetId: !Select [0, !Ref SubnetIds] # Select the first subnet from the list
+
+Outputs:
+  SelectedVpc:
+    Description: "The selected VPC ID."
+    Value: !Ref VpcId
+
+  SelectedSubnets:
+    Description: "List of selected subnets."
+    Value: !Join [", ", !Ref SubnetIds]
