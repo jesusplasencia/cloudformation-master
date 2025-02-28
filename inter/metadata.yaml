@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "Example of using AWS::CloudFormation::Interface to group parameters in the UI."
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Network Configuration"
+        Parameters:
+          - VpcId
+          - SubnetId
+      - Label:
+          default: "EC2 Configuration"
+        Parameters:
+          - InstanceType
+          - KeyPair
+    ParameterLabels:
+      VpcId:
+        default: "VPC ID"
+      SubnetId:
+        default: "Subnet ID"
+      InstanceType:
+        default: "EC2 Instance Type"
+      KeyPair:
+        default: "SSH Key Pair"
+
+Parameters:
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: "Select the VPC in which the resources will be deployed."
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: "Select a subnet for the instance."
+
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+    Description: "Select the instance type."
+
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "Select an existing key pair to enable SSH access."
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      SubnetId: !Ref SubnetId
+      ImageId: !Ref ImageId
+
+Outputs:
+  InstanceId:
+    Description: "The ID of the created EC2 instance."
+    Value: !Ref MyEC2Instance
